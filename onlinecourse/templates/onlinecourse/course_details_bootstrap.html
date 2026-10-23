@@ -1,0 +1,101 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ course.name }}</title>
+    <link rel="stylesheet"
+          href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+
+<nav class="navbar navbar-light bg-light">
+    <a class="navbar-brand" href="{% url 'onlinecourse:index' %}">Home</a>
+
+    {% if user.is_authenticated %}
+        <span class="navbar-text">
+            {{ user.first_name }} ({{ user.username }})
+        </span>
+        <a class="btn btn-link" href="{% url 'onlinecourse:logout' %}">Logout</a>
+    {% else %}
+        <a class="btn btn-link" href="{% url 'onlinecourse:login' %}">Login</a>
+        <a class="btn btn-link" href="{% url 'onlinecourse:registration' %}">Sign Up</a>
+    {% endif %}
+</nav>
+
+<div class="container mt-4">
+    <h1>{{ course.name }}</h1>
+    <p>{{ course.description }}</p>
+
+    <h3>Lessons</h3>
+    {% for lesson in course.lesson_set.all %}
+        <div class="card mb-3">
+            <div class="card-header">
+                {{ lesson.order }}. {{ lesson.title }}
+            </div>
+            <div class="card-body">
+                <p>{{ lesson.content }}</p>
+            </div>
+        </div>
+    {% empty %}
+        <p>No lessons are available for this course.</p>
+    {% endfor %}
+
+    {% if user.is_authenticated %}
+        {% if course.enrollment_set.all %}
+            <h3 class="mt-4">Course Assessment</h3>
+
+            {% if course.question_set.all %}
+                <form method="post"
+                      action="{% url 'onlinecourse:submit' course.id %}">
+                    {% csrf_token %}
+
+                    {% for question in course.question_set.all %}
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <strong>{{ forloop.counter }}.
+                                    {{ question.content }}</strong>
+                                <span class="badge badge-info">
+                                    {{ question.grade }} marks
+                                </span>
+                            </div>
+
+                            <div class="card-body">
+                                {% for choice in question.choice_set.all %}
+                                    <div class="form-check">
+                                        <input class="form-check-input"
+                                               type="checkbox"
+                                               name="choice_{{ question.id }}"
+                                               id="choice_{{ choice.id }}"
+                                               value="{{ choice.id }}">
+                                        <label class="form-check-label"
+                                               for="choice_{{ choice.id }}">
+                                            {{ choice.content }}
+                                        </label>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endfor %}
+
+                    <button type="submit" class="btn btn-success">
+                        Submit Exam
+                    </button>
+                </form>
+            {% else %}
+                <p>No assessment questions have been added yet.</p>
+            {% endif %}
+        {% else %}
+            <a class="btn btn-primary"
+               href="{% url 'onlinecourse:enroll' course.id %}">
+                Enroll in Course
+            </a>
+        {% endif %}
+    {% else %}
+        <p>Please log in to access the course assessment.</p>
+    {% endif %}
+</div>
+
+</body>
+</html>
